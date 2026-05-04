@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yusep Muhamad Zazuli — Data Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b09;--bg2:#101010;--bg3:#161613;
+  --accent:#c8b97a;--accent-dim:rgba(200,185,122,.09);--accent-border:rgba(200,185,122,.22);
+  --green:#7fb08a;--green-dim:rgba(127,176,138,.1);
+  --text:#e8e4d9;--text2:#9a9484;--muted:#4e4b42;
+  --line:rgba(255,255,255,.065);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;overflow-x:hidden;cursor:none}
+
+/* ═══ PRELOADER ═══ */
+#preloader{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;align-items:center;justify-content:center;transition:opacity .6s .1s,visibility .6s .1s}
+#preloader.gone{opacity:0;visibility:hidden}
+.pre-line{width:120px;height:1px;background:var(--line);position:relative;overflow:hidden}
+.pre-fill{position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;animation:preAnim 1.4s cubic-bezier(.76,0,.24,1) forwards}
+@keyframes preAnim{0%{transform:scaleX(0)}60%{transform:scaleX(1);transform-origin:left}61%{transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
+
+/* ═══ GRAIN ═══ */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E");pointer-events:none;z-index:800;opacity:.32}
+
+/* ═══ CURSOR ═══ */
+#cur{width:7px;height:7px;background:var(--accent);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;mix-blend-mode:difference}
+#cur-ring{width:38px;height:38px;border:1.5px solid rgba(200,185,122,.5);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .18s ease,height .18s ease,border-color .2s}
+.cur-hover #cur{width:0;height:0}
+.cur-hover #cur-ring{width:68px;height:68px;border-color:rgba(200,185,122,.2);background:rgba(200,185,122,.06)}
+
+/* ═══ PROGRESS ═══ */
+#progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--accent),rgba(200,185,122,.3));z-index:1001;width:0;transition:width .08s}
+
+/* ═══ CANVAS ═══ */
+#cvs{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ═══ NAV ═══ */
+nav{position:fixed;top:0;left:0;right:0;z-index:700;padding:20px 56px;display:flex;justify-content:space-between;align-items:center;background:rgba(11,11,9,0);backdrop-filter:blur(0px);border-bottom:1px solid rgba(255,255,255,0);transition:all .4s}
+nav.scrolled{background:rgba(11,11,9,.85);backdrop-filter:blur(20px);border-bottom-color:var(--line);padding:13px 56px}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:20px;text-decoration:none;color:var(--text);display:flex;gap:4px;align-items:baseline}
+.nav-logo em{font-style:italic;color:var(--accent)}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:.12em;text-transform:uppercase;position:relative;transition:color .25s}
+.nav-links a::after{content:'';position:absolute;bottom:-5px;left:0;height:1px;width:0;background:var(--accent);transition:width .25s}
+.nav-links a:hover,.nav-links a.active{color:var(--accent)}
+.nav-links a:hover::after,.nav-links a.active::after{width:100%}
+.nav-right{display:flex;align-items:center;gap:14px}
+.open-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);padding:5px 12px;border:1px solid rgba(127,176,138,.3);background:var(--green-dim);letter-spacing:.1em;animation:pulseBadge 2.5s ease-in-out infinite}
+@keyframes pulseBadge{0%,100%{box-shadow:0 0 0 0 rgba(127,176,138,.25)}50%{box-shadow:0 0 0 6px rgba(127,176,138,0)}}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer}
+.hamburger span{display:block;width:22px;height:1.5px;background:var(--text);transition:all .3s}
+.hamburger.x span:nth-child(1){transform:rotate(45deg) translate(4.7px,4.7px)}
+.hamburger.x span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.x span:nth-child(3){transform:rotate(-45deg) translate(4.7px,-4.7px)}
+
+/* Mobile overlay */
+.mob-overlay{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:44px;opacity:0;pointer-events:none;transition:opacity .35s}
+.mob-overlay.open{opacity:1;pointer-events:all}
+.mob-overlay a{font-family:'DM Serif Display',serif;font-size:42px;color:var(--text);text-decoration:none;transition:color .2s,transform .2s;transform:translateY(12px);opacity:0}
+.mob-overlay.open a{transform:translateY(0);opacity:1}
+.mob-overlay.open a:nth-child(1){transition:all .3s .05s}
+.mob-overlay.open a:nth-child(2){transition:all .3s .1s}
+.mob-overlay.open a:nth-child(3){transition:all .3s .15s}
+.mob-overlay.open a:nth-child(4){transition:all .3s .2s}
+.mob-overlay.open a:nth-child(5){transition:all .3s .25s}
+.mob-overlay a:hover{color:var(--accent)}
+
+/* ═══ HERO ═══ */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 56px 80px;position:relative;z-index:1;border-bottom:1px solid var(--line);overflow:hidden}
+.hero-eyebrow{display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.18em;text-transform:uppercase;margin-bottom:36px;opacity:0;animation:fadeUp .7s .3s forwards}
+.hero-eyebrow::before{content:'';width:24px;height:1px;background:var(--accent)}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulseDot 2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.6)}}
+.hero-name{font-family:'DM Serif Display',serif;font-size:clamp(68px,11vw,148px);font-weight:400;line-height:.92;letter-spacing:-.03em;overflow:hidden;margin-bottom:12px}
+.hero-name .word{display:block;overflow:hidden}
+.hero-name .word span{display:block;transform:translateY(105%);animation:slideUp .8s cubic-bezier(.16,1,.3,1) forwards;opacity:0}
+.hero-name .word:nth-child(1) span{animation-delay:.35s}
+.hero-name .word:nth-child(2) span{animation-delay:.48s}
+.hero-name .word:nth-child(3) span{animation-delay:.61s;color:var(--accent);font-style:italic}
+.hero-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:48px;margin-top:40px;flex-wrap:wrap;opacity:0;animation:fadeUp .7s .85s forwards}
+.hero-desc{font-size:16px;color:var(--text2);line-height:1.8;max-width:460px}
+.hero-desc strong{color:var(--text);font-weight:400}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px;opacity:0;animation:fadeUp .7s 1s forwards}
+.hero-right-stats{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);flex-shrink:0}
+.hstat{padding:16px 28px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:4px;transition:background .2s}
+.hstat:last-child{border-bottom:none}
+.hstat:hover{background:var(--bg2)}
+.hstat-n{font-family:'DM Serif Display',serif;font-size:30px;color:var(--accent);line-height:1}
+.hstat-l{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+
+/* Magnetic buttons */
+.btn-fill{padding:14px 32px;background:var(--accent);color:#0b0b09;font-family:'DM Sans',sans-serif;font-weight:500;font-size:14px;text-decoration:none;display:inline-block;position:relative;overflow:hidden;transition:color .25s}
+.btn-fill::before{content:'';position:absolute;inset:0;background:#e8e4d9;transform:scaleX(0);transform-origin:right;transition:transform .3s cubic-bezier(.76,0,.24,1)}
+.btn-fill:hover::before{transform:scaleX(1);transform-origin:left}
+.btn-fill:hover{color:#0b0b09}
+.btn-fill span{position:relative;z-index:1}
+.btn-line{padding:14px 32px;border:1px solid var(--line);color:var(--text2);font-family:'DM Sans',sans-serif;font-weight:300;font-size:14px;text-decoration:none;display:inline-block;position:relative;overflow:hidden;transition:color .25s,border-color .25s}
+.btn-line::before{content:'';position:absolute;inset:0;background:var(--accent-dim);transform:scaleX(0);transform-origin:right;transition:transform .3s cubic-bezier(.76,0,.24,1)}
+.btn-line:hover::before{transform:scaleX(1);transform-origin:left}
+.btn-line:hover{color:var(--accent);border-color:var(--accent-border)}
+.btn-line span{position:relative;z-index:1}
+
+/* ═══ SECTIONS ═══ */
+section{padding:96px 56px;border-bottom:1px solid var(--line);position:relative;z-index:1}
+.s-tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-bottom:14px}
+.s-title{font-family:'DM Serif Display',serif;font-size:clamp(32px,4vw,50px);line-height:1.15;letter-spacing:-.02em;margin-bottom:56px;overflow:hidden}
+.s-title em{font-style:italic;color:var(--accent)}
+/* Scramble underline */
+.s-title .und{position:relative;display:inline-block}
+.s-title .und::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:1px;background:var(--accent);transition:width .5s cubic-bezier(.76,0,.24,1)}
+.s-title .und.active::after{width:100%}
+
+/* ═══ ABOUT ═══ */
+#about{background:var(--bg2)}
+.about-grid{display:grid;grid-template-columns:1.3fr .72fr;gap:80px;align-items:start}
+.about-body p{font-size:15px;line-height:1.88;color:var(--text2);margin-bottom:18px}
+.about-body p strong{color:var(--text);font-weight:400}
+.about-body p em{font-style:italic;color:var(--accent)}
+.quote-block{margin-top:36px;padding:24px 28px;border-left:2px solid var(--accent);background:var(--accent-dim);position:relative;overflow:hidden}
+.quote-block::before{content:'"';position:absolute;top:-20px;right:16px;font-family:'DM Serif Display',serif;font-size:120px;color:var(--accent);opacity:.07;line-height:1}
+.quote-block p{font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;color:var(--text);line-height:1.6;margin:0;position:relative;z-index:1}
+.quote-block cite{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);margin-top:12px;letter-spacing:.04em;font-style:normal}
+.about-side{}
+.slabel{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+.clinks{display:flex;flex-direction:column;gap:7px;margin-bottom:28px}
+.clink{display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);text-decoration:none;padding:12px 15px;border:1px solid var(--line);background:rgba(255,255,255,.015);position:relative;overflow:hidden;transition:color .25s,border-color .25s}
+.clink::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent-dim);transition:width .3s cubic-bezier(.76,0,.24,1)}
+.clink:hover::before{width:100%}
+.clink:hover{color:var(--accent);border-color:var(--accent-border)}
+.clink span{position:relative;z-index:1;display:contents}
+.clink-icon{position:relative;z-index:1;width:16px;text-align:center;flex-shrink:0}
+.cert-list{display:flex;flex-direction:column;gap:7px}
+.cert{padding:12px 15px;background:rgba(255,255,255,.015);border:1px solid var(--line);transition:border-color .25s,transform .2s}
+.cert:hover{border-color:var(--accent-border);transform:translateX(4px)}
+.cert-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);margin-bottom:3px}
+.cert-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+
+/* ═══ STACK ═══ */
+#stack{background:var(--bg)}
+.stack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.stack-cat{background:var(--bg2);padding:28px;position:relative;overflow:hidden}
+.stack-cat::before{content:'';position:absolute;inset:0;background:var(--accent-dim);opacity:0;transition:opacity .3s}
+.stack-cat:hover::before{opacity:1}
+.stack-cat-head{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--accent-border);position:relative;z-index:1}
+.stack-items{display:flex;flex-direction:column;gap:0;position:relative;z-index:1}
+.stack-item{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.03);opacity:0;transform:translateX(-8px);transition:color .2s,transform .15s}
+.stack-item.si-in{opacity:1;transform:none}
+.stack-item:last-child{border-bottom:none}
+.stack-item:hover{color:var(--text)}
+.stack-item::before{content:'';width:3px;height:3px;background:var(--accent);border-radius:50%;opacity:.5;flex-shrink:0;transition:transform .2s}
+.stack-item:hover::before{transform:scale(1.8)}
+
+/* ═══ EXPERIENCE ═══ */
+#experience{background:var(--bg2)}
+.exp-list{display:flex;flex-direction:column;gap:10px}
+.exp-card{background:var(--bg);border:1px solid var(--line);padding:28px 32px;position:relative;overflow:hidden;transition:border-color .3s;opacity:0;transform:translateY(20px);transition:opacity .55s,transform .55s,border-color .3s}
+.exp-card.ec-in{opacity:1;transform:none}
+.exp-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);transition:width .3s cubic-bezier(.76,0,.24,1)}
+.exp-card:hover::after{width:2px}
+.exp-card:hover{border-color:var(--accent-border)}
+.exp-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.exp-role{font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:-.01em;line-height:1.2}
+.exp-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);padding:2px 8px;border:1px solid var(--accent-border);background:var(--accent-dim);vertical-align:middle;margin-left:8px}
+.exp-company{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.05em;margin-top:3px}
+.exp-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;padding-top:4px;flex-shrink:0}
+.exp-desc{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.exp-desc li{font-size:13px;color:var(--text2);line-height:1.6;padding-left:16px;position:relative}
+.exp-desc li::before{content:'—';position:absolute;left:0;color:var(--muted);font-size:11px}
+.exp-tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding:2px 8px;border:1px solid var(--line);transition:border-color .2s,color .2s}
+.tag:hover{border-color:var(--accent-border);color:var(--text2)}
+
+/* ═══ PROJECTS ═══ */
+#projects{background:var(--bg)}
+.proj-filter{display:flex;gap:4px;margin-bottom:40px;flex-wrap:wrap}
+.pf-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:7px 16px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;position:relative;overflow:hidden}
+.pf-btn::before{content:'';position:absolute;inset:0;background:var(--accent-dim);transform:scaleX(0);transform-origin:right;transition:transform .25s cubic-bezier(.76,0,.24,1)}
+.pf-btn:hover::before,.pf-btn.active::before{transform:scaleX(1);transform-origin:left}
+.pf-btn.active,.pf-btn:hover{border-color:var(--accent-border);color:var(--accent)}
+.pf-btn span{position:relative;z-index:1}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.proj-card{border:1px solid var(--line);background:var(--bg2);padding:32px;position:relative;overflow:hidden;display:flex;flex-direction:column;transition:border-color .3s,transform .3s,box-shadow .3s;transform-style:preserve-3d}
+.proj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.76,0,.24,1)}
+.proj-card:hover{border-color:var(--accent-border);transform:translateY(-5px) rotateX(1deg);box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.proj-card:hover::before{transform:scaleX(1)}
+.proj-card.hidden{display:none}
+.proj-card.entering{animation:projIn .4s ease forwards}
+@keyframes projIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.proj-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.proj-year{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.proj-cat{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border:1px solid var(--line);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.proj-cat.data{color:var(--accent);border-color:var(--accent-border);background:var(--accent-dim)}
+.proj-cat.game{color:var(--green);border-color:rgba(127,176,138,.3);background:var(--green-dim)}
+.proj-cat.sys{color:#a0c4d8;border-color:rgba(160,196,216,.25);background:rgba(160,196,216,.06)}
+.proj-title{font-family:'DM Serif Display',serif;font-size:21px;letter-spacing:-.01em;line-height:1.25;margin-bottom:10px}
+.proj-desc{font-size:13px;color:var(--text2);line-height:1.72;flex:1;margin-bottom:20px}
+.proj-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.proj-techs{display:flex;flex-wrap:wrap;gap:5px;flex:1}
+.proj-tech{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding:2px 7px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.proj-link{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);text-decoration:none;white-space:nowrap;letter-spacing:.04em;position:relative}
+.proj-link::after{content:'';position:absolute;bottom:-1px;left:0;width:0;height:1px;background:var(--accent);transition:width .2s}
+.proj-link:hover::after{width:100%}
+
+/* ═══ ORACLE FEATURE ═══ */
+#feature{background:var(--bg3);padding:88px 56px;border-bottom:1px solid var(--line)}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.feat-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);letter-spacing:.15em;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(127,176,138,.3);background:var(--green-dim);display:inline-block;margin-bottom:22px}
+.feat-title{font-family:'DM Serif Display',serif;font-size:clamp(26px,3.5vw,42px);line-height:1.2;letter-spacing:-.02em;margin-bottom:18px}
+.feat-title em{font-style:italic;color:var(--accent)}
+.feat-body{font-size:15px;color:var(--text2);line-height:1.8;margin-bottom:28px}
+.feat-link{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-decoration:none;letter-spacing:.04em;position:relative;display:inline-block}
+.feat-link::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:1px;background:var(--accent-border);transition:height .2s,background .2s}
+.feat-link:hover::after{height:2px;background:var(--accent)}
+.feat-card{padding:36px;border:1px solid var(--accent-border);background:var(--accent-dim);position:relative;overflow:hidden}
+.feat-card::before{content:'"';position:absolute;top:-24px;right:20px;font-family:'DM Serif Display',serif;font-size:140px;color:var(--accent);opacity:.06;line-height:1}
+.feat-quote{font-family:'DM Serif Display',serif;font-size:21px;font-style:italic;color:var(--text);line-height:1.55;margin-bottom:18px;position:relative;z-index:1}
+.feat-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.04em;line-height:1.8}
+
+/* ═══ FOOTER ═══ */
+footer{background:var(--bg);padding:64px 56px 40px;position:relative;z-index:1}
+.footer-top{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:44px;border-bottom:1px solid var(--line);margin-bottom:28px;flex-wrap:wrap;gap:28px}
+.footer-name{font-family:'DM Serif Display',serif;font-size:40px;letter-spacing:-.025em;line-height:1;margin-bottom:10px}
+.footer-name em{font-style:italic;color:var(--accent)}
+.footer-role{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em}
+.footer-links{display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+.footer-links a{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);text-decoration:none;transition:color .2s,transform .15s;display:inline-block}
+.footer-links a:hover{color:var(--accent);transform:translateX(-3px)}
+.footer-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.footer-copy{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.footer-sig{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.footer-sig span{color:var(--accent)}
+
+/* ═══ KEYFRAMES ═══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{transform:translateY(105%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ═══ REVEAL ═══ */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+.rv-l{transform:translateX(-28px)}
+.rv-r{transform:translateX(28px)}
+.rv-l.in,.rv-r.in{transform:none}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+
+/* ═══ MOBILE ═══ */
+@media(max-width:900px){
+  body{cursor:auto}
+  #cur,#cur-ring{display:none}
+  nav{padding:15px 24px}
+  nav.scrolled{padding:10px 24px}
+  .nav-links{display:none}
+  .hamburger{display:flex}
+  .hero{padding:90px 24px 60px}
+  .hero-bottom{flex-direction:column;align-items:flex-start}
+  .hero-right-stats{flex-direction:row;flex-wrap:wrap;width:100%}
+  .hstat{flex:1;min-width:100px}
+  section{padding:64px 24px}
+  #feature{padding:64px 24px}
+  .about-grid{grid-template-columns:1fr;gap:44px}
+  .stack-grid{grid-template-columns:1fr 1fr}
+  .feat-grid{grid-template-columns:1fr;gap:36px}
+  footer{padding:48px 24px 32px}
+  .footer-top{flex-direction:column}
+  .footer-links{align-items:flex-start}
+  .footer-links a:hover{transform:translateX(3px)}
+  .footer-bottom{flex-direction:column;gap:5px}
+}
+@media(max-width:600px){
+  .hero-name{font-size:clamp(52px,14vw,80px)}
+  .stack-grid{grid-template-columns:1fr}
+  .proj-grid{grid-template-columns:1fr}
+  .hero-right-stats{grid-template-columns:repeat(2,1fr);display:grid}
+  .hstat{border-right:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+
+<!-- PRELOADER -->
+<div id="preloader"><div class="pre-line"><div class="pre-fill"></div></div></div>
+
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<!-- PROGRESS -->
+<div id="progress"></div>
+
+<!-- CANVAS -->
+<canvas id="cvs"></canvas>
+
+<!-- MOBILE OVERLAY -->
+<div class="mob-overlay" id="mobMenu">
+  <a href="#about" onclick="closeMenu()">About</a>
+  <a href="#stack" onclick="closeMenu()">Stack</a>
+  <a href="#experience" onclick="closeMenu()">Experience</a>
+  <a href="#projects" onclick="closeMenu()">Projects</a>
+  <a href="mailto:yusepmuhamadzazuli05@gmail.com" onclick="closeMenu()">Contact</a>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="nav-logo" href="#home">Yusep <em>Zazuli</em></a>
+  <ul class="nav-links">
+    <li><a href="#about" data-s="about">About</a></li>
+    <li><a href="#stack" data-s="stack">Stack</a></li>
+    <li><a href="#experience" data-s="experience">Exp</a></li>
+    <li><a href="#projects" data-s="projects">Projects</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="open-badge">● Open to Work</div>
+    <div class="hamburger" id="ham" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero" id="home">
+  <div class="hero-eyebrow">
+    <span class="eyebrow-dot"></span>
+    Data Engineer &nbsp;·&nbsp; @azaa_.py &nbsp;·&nbsp; Bandung, ID
+  </div>
+
+  <div class="hero-name">
+    <div class="word"><span>Yusep</span></div>
+    <div class="word"><span>Muhamad</span></div>
+    <div class="word"><span>Zazuli</span></div>
+  </div>
+
+  <div class="hero-bottom">
+    <div>
+      <p class="hero-desc">
+        I build systems that <strong>move data at scale</strong> —<br>
+        from raw acquisition to analytics-ready pipelines.<br>
+        <em>Pipeline by day. Curious by night.</em>
+      </p>
+      <div class="hero-actions">
+        <a href="#projects" class="btn-fill"><span>See My Work ↓</span></a>
+        <a href="https://linkedin.com/in/yusep-muhamad-zazuli-a2a91b301" target="_blank" class="btn-line"><span>LinkedIn ↗</span></a>
+        <a href="https://github.com/yusepahmad" target="_blank" class="btn-line"><span>GitHub ↗</span></a>
+      </div>
+    </div>
+    <div class="hero-right-stats">
+      <div class="hstat"><div class="hstat-n" data-count="2" data-suf="+">0</div><div class="hstat-l">Yrs at eBdesk</div></div>
+      <div class="hstat"><div class="hstat-n" data-count="8" data-suf="+">0</div><div class="hstat-l">Projects</div></div>
+      <div class="hstat"><div class="hstat-n" data-count="8" data-suf="k+">0</div><div class="hstat-l">Webinar Reach</div></div>
+      <div class="hstat"><div class="hstat-n" data-count="285" data-suf="+">0</div><div class="hstat-l">Connections</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ABOUT ══════════════ -->
+<section id="about">
+  <div class="s-tag">01 · About</div>
+  <h2 class="s-title rv">A bit about <em><span class="und">who I am.</span></em></h2>
+  <div class="about-grid">
+    <div class="about-body rv rv-l">
+      <p>I started at <strong>SMK Negeri 4 Padalarang</strong> — a vocational school. Not the conventional tech path, but that's where I first got real engineering experience, and I never looked back.</p>
+      <p>Since joining PT eBdesk Teknologi in 2023, I've grown from intern to <strong>Team Lead</strong> — designing and scaling data pipelines that handle massive volumes of data from web platforms, APIs, and social media. Python, Kafka, Redis, Elasticsearch every day.</p>
+      <p>Currently pursuing <strong>Computer Science at Universitas Pelita Harapan</strong>, focusing on <em>Artificial Intelligence and Cybersecurity</em>. I believe the future of data infrastructure lives at that intersection.</p>
+      <p>Outside pipelines — I build games in Java, explore systems in Rust and C++, and try to be a signal for the next generation of engineers coming from vocational schools like mine.</p>
+      <div class="quote-block">
+        <p>"My journey took me from SMK alumnus to Team Lead Scrapper Engineer while pursuing my degree."</p>
+        <cite>— Oracle Academy National Webinar, Feb 2026 · 8,000+ participants</cite>
+      </div>
+    </div>
+    <div class="about-side rv rv-r d1">
+      <div class="slabel" style="margin-bottom:14px">Contact</div>
+      <div class="clinks">
+        <a href="mailto:yusepmuhamadzazuli05@gmail.com" class="clink"><span class="clink-icon">✉</span><span>yusepmuhamadzazuli05@gmail.com</span></a>
+        <a href="https://linkedin.com/in/yusep-muhamad-zazuli-a2a91b301" target="_blank" class="clink"><span class="clink-icon">in</span><span>linkedin.com/in/yusep-muhamad-zazuli</span></a>
+        <a href="https://github.com/yusepahmad" target="_blank" class="clink"><span class="clink-icon">⌥</span><span>github.com/yusepahmad</span></a>
+        <a href="https://instagram.com/azaa_.py" target="_blank" class="clink"><span class="clink-icon">◎</span><span>@azaa_.py</span></a>
+        <a href="tel:+62895332792844" class="clink"><span class="clink-icon">☎</span><span>+62 895 332 792 844</span></a>
+      </div>
+      <div class="slabel" style="margin-bottom:14px;margin-top:28px">Certifications</div>
+      <div class="cert-list">
+        <div class="cert"><div class="cert-name">Certified Secure Computer User v3</div><div class="cert-meta">EC-Council · Oct 2024 · #729867</div></div>
+        <div class="cert"><div class="cert-name">Powerful Me, Powerful Team</div><div class="cert-meta">Ikigai Consulting · Feb 2026</div></div>
+        <div class="cert"><div class="cert-name">Oracle Academy Speaker</div><div class="cert-meta">Ministry of Education Indonesia · Feb 2026</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ STACK ══════════════ -->
+<section id="stack">
+  <div class="s-tag">02 · Tech Stack</div>
+  <h2 class="s-title rv">Tools I build <em><span class="und">with.</span></em></h2>
+  <div class="stack-grid rv">
+    <div class="stack-cat">
+      <div class="stack-cat-head">Languages</div>
+      <div class="stack-items">
+        <div class="stack-item">Python</div><div class="stack-item">Java</div>
+        <div class="stack-item">Rust</div><div class="stack-item">C++</div><div class="stack-item">C</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-head">Frameworks</div>
+      <div class="stack-items">
+        <div class="stack-item">FastAPI</div><div class="stack-item">asyncio</div>
+        <div class="stack-item">SQLAlchemy Async</div><div class="stack-item">Streamlit</div>
+        <div class="stack-item">Java Swing / AWT</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-head">Data & Streaming</div>
+      <div class="stack-items">
+        <div class="stack-item">Apache Kafka</div><div class="stack-item">Redis</div>
+        <div class="stack-item">Elasticsearch</div><div class="stack-item">PostgreSQL</div><div class="stack-item">MongoDB</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-head">Infrastructure</div>
+      <div class="stack-items">
+        <div class="stack-item">Docker</div><div class="stack-item">REST APIs</div>
+        <div class="stack-item">AWS S3</div><div class="stack-item">pytest / JUnit</div>
+        <div class="stack-item">Telegram Bot API</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-head">Core Disciplines</div>
+      <div class="stack-items">
+        <div class="stack-item">ETL Pipeline Design</div><div class="stack-item">Data Acquisition</div>
+        <div class="stack-item">Stream Processing</div><div class="stack-item">Graph Algorithms</div>
+        <div class="stack-item">Pipeline Monitoring</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-head">Interests</div>
+      <div class="stack-items">
+        <div class="stack-item">Artificial Intelligence</div><div class="stack-item">Cybersecurity</div>
+        <div class="stack-item">Agentic RAG Systems</div><div class="stack-item">Game Development</div>
+        <div class="stack-item">Systems Programming</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ EXPERIENCE ══════════════ -->
+<section id="experience">
+  <div class="s-tag">03 · Experience</div>
+  <h2 class="s-title rv">Where I've <em><span class="und">been building.</span></em></h2>
+  <div class="exp-list">
+    <div class="exp-card">
+      <div class="exp-header">
+        <div><div class="exp-role">Data Engineer</div><div class="exp-company">PT eBdesk Teknologi · Tangerang Selatan</div></div>
+        <div class="exp-date">Jan 2026 — Present</div>
+      </div>
+      <ul class="exp-desc">
+        <li>Designed and improved automated data ingestion pipelines for web platforms, applications, and social media.</li>
+        <li>Developed scalable ETL workflows transforming high-volume external data into analytics-ready datasets.</li>
+        <li>Implemented data validation, monitoring, and retry mechanisms to improve pipeline reliability.</li>
+        <li>Collaborated with engineering teams supporting real-time and batch analytics systems.</li>
+      </ul>
+      <div class="exp-tags"><span class="tag">Python</span><span class="tag">Kafka</span><span class="tag">REST API</span><span class="tag">ETL</span></div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-header">
+        <div><div class="exp-role">Data Acquisition Engineer <span class="exp-badge">Team Lead</span></div><div class="exp-company">PT eBdesk Teknologi · Tangerang Selatan</div></div>
+        <div class="exp-date">Jan 2025 — Jan 2026</div>
+      </div>
+      <ul class="exp-desc">
+        <li>Led a team for large-scale external data acquisition from web platforms and social media.</li>
+        <li>Designed scalable crawling and ingestion pipelines with Kafka and distributed storage (S3).</li>
+        <li>Implemented scheduling, retry, and data validation for stable high-volume pipelines.</li>
+        <li>Coordinated engineering tasks, improving team productivity and pipeline stability.</li>
+      </ul>
+      <div class="exp-tags"><span class="tag">Kafka</span><span class="tag">Redis</span><span class="tag">S3</span><span class="tag">Team Lead</span><span class="tag">Smart Crawling</span></div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-header">
+        <div><div class="exp-role">Data Acquisition Engineer</div><div class="exp-company">PT eBdesk Teknologi · Tangerang Selatan</div></div>
+        <div class="exp-date">Apr 2024 — Jan 2025</div>
+      </div>
+      <ul class="exp-desc">
+        <li>Developed ETL pipelines to collect, clean, and transform structured data from multiple external sources.</li>
+        <li>Built automation tools using Python and REST APIs for data processing workflows.</li>
+        <li>Supported large-scale data indexing and reprocessing using Elasticsearch.</li>
+        <li>Built internal monitoring tools with Streamlit dashboards and Telegram notifications.</li>
+      </ul>
+      <div class="exp-tags"><span class="tag">Python</span><span class="tag">Elasticsearch</span><span class="tag">Streamlit</span><span class="tag">Telegram</span></div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-header">
+        <div><div class="exp-role">Data Collector <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--muted)">(Freelance)</span></div><div class="exp-company">PT eBdesk Teknologi · Tangerang Selatan</div></div>
+        <div class="exp-date">Feb 2024 — Apr 2024</div>
+      </div>
+      <ul class="exp-desc">
+        <li>Built automated data collection workflows from websites, applications, and social media.</li>
+        <li>Deployed services using Docker and supported streaming workflows via REST APIs.</li>
+      </ul>
+      <div class="exp-tags"><span class="tag">Python</span><span class="tag">Docker</span><span class="tag">REST APIs</span></div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-header">
+        <div><div class="exp-role">Back End Engineer <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--muted)">(Internship)</span></div><div class="exp-company">PT eBdesk Teknologi · Jakarta Selatan</div></div>
+        <div class="exp-date">Jul 2023 — Jan 2024</div>
+      </div>
+      <ul class="exp-desc">
+        <li>Developed backend services and internal APIs supporting company applications.</li>
+        <li>Built early data ingestion services and automation workflows using Python and Redis.</li>
+        <li>Collaborated across engineering teams to support data collection and service integration.</li>
+      </ul>
+      <div class="exp-tags"><span class="tag">Python</span><span class="tag">Redis</span><span class="tag">API</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PROJECTS ══════════════ -->
+<section id="projects">
+  <div class="s-tag">04 · Projects</div>
+  <h2 class="s-title rv">Things I've <em><span class="und">built & shipped.</span></em></h2>
+  <div class="proj-filter">
+    <button class="pf-btn active" onclick="filterProj('all',this)"><span>All</span></button>
+    <button class="pf-btn" onclick="filterProj('data',this)"><span>Data Engineering</span></button>
+    <button class="pf-btn" onclick="filterProj('game',this)"><span>Game Dev</span></button>
+    <button class="pf-btn" onclick="filterProj('sys',this)"><span>Systems</span></button>
+  </div>
+  <div class="proj-grid">
+    <div class="proj-card rv" data-cat="data">
+      <div class="proj-top"><div class="proj-year">2026</div><div class="proj-cat data">Data Eng</div></div>
+      <h3 class="proj-title">Async Connection Registry</h3>
+      <p class="proj-desc">Dynamic async connection manager for multi-database pipelines. Centralizes DB configs in MongoDB, caches connections for PostgreSQL, MongoDB, and Elasticsearch using a factory-based architecture. Designed for high-throughput ETL workloads.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">asyncio</span><span class="proj-tech">MongoDB</span><span class="proj-tech">PostgreSQL</span><span class="proj-tech">Elasticsearch</span></div><a href="https://github.com/yusepahmad/async-connection-registry" target="_blank" class="proj-link">github ↗</a></div>
+    </div>
+    <div class="proj-card rv d1" data-cat="sys">
+      <div class="proj-top"><div class="proj-year">2025</div><div class="proj-cat sys">Systems</div></div>
+      <h3 class="proj-title">Smart Navigation System</h3>
+      <p class="proj-desc">Weighted graph navigation system implementing Dijkstra & DFS algorithms across 3 interfaces: Python CLI (OOP), interactive Streamlit UI, and a C CLI. Includes KRL station dataset, batch query export, and optimisation by distance or time.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">C</span><span class="proj-tech">C++</span><span class="proj-tech">Dijkstra</span><span class="proj-tech">Streamlit</span></div><a href="https://github.com/yusepahmad/Smart-Navigation-System" target="_blank" class="proj-link">github ↗</a></div>
+    </div>
+    <div class="proj-card rv d2" data-cat="data">
+      <div class="proj-top"><div class="proj-year">2025</div><div class="proj-cat data">Data Eng</div></div>
+      <h3 class="proj-title">Large-Scale Social Media Data Pipeline</h3>
+      <p class="proj-desc">Scalable pipeline for collecting and processing large volumes of social media data from multiple platforms. Automated scheduling, retry mechanisms, and validation to handle unreliable external sources at scale.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">Kafka</span><span class="proj-tech">Redis</span><span class="proj-tech">Elasticsearch</span></div></div>
+    </div>
+    <div class="proj-card rv" data-cat="data">
+      <div class="proj-top"><div class="proj-year">2025</div><div class="proj-cat data">Data Eng</div></div>
+      <h3 class="proj-title">ETL Pipeline Boilerplate Template</h3>
+      <p class="proj-desc">Reusable ETL boilerplate with modular extract / transform / load architecture, async SQLAlchemy ORM, MD5-based unique identifiers, Docker deployment, and production safety checks.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">PostgreSQL</span><span class="proj-tech">SQLAlchemy</span><span class="proj-tech">Docker</span><span class="proj-tech">pytest</span></div></div>
+    </div>
+    <div class="proj-card rv d1" data-cat="game">
+      <div class="proj-top"><div class="proj-year">2025</div><div class="proj-cat game">Game Dev</div></div>
+      <h3 class="proj-title">2D Nyawit — Sawit2D</h3>
+      <p class="proj-desc">2D top-down adventure game set in a palm plantation built with Java Swing & AWT. 50×50 tile world, WASD movement, collision detection, item collection. I served as Lead Game Developer — responsible for architecture, game loop, and system integration.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Java</span><span class="proj-tech">Swing</span><span class="proj-tech">AWT</span><span class="proj-tech">Maven</span><span class="proj-tech">JUnit</span></div><a href="https://github.com/yusepahmad/2DNyawit" target="_blank" class="proj-link">github ↗</a></div>
+    </div>
+    <div class="proj-card rv d2" data-cat="data">
+      <div class="proj-top"><div class="proj-year">2024</div><div class="proj-cat data">Data Eng</div></div>
+      <h3 class="proj-title">Automated ETL & Ingestion Framework</h3>
+      <p class="proj-desc">Modular ETL framework for collecting and transforming data from external APIs and web platforms. Supports batch and streaming processing with automated scheduling and monitoring.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">PostgreSQL</span><span class="proj-tech">Redis</span><span class="proj-tech">FastAPI</span></div></div>
+    </div>
+    <div class="proj-card rv" data-cat="data">
+      <div class="proj-top"><div class="proj-year">2024</div><div class="proj-cat data">Data Eng</div></div>
+      <h3 class="proj-title">Data Pipeline Monitoring Dashboard</h3>
+      <p class="proj-desc">Internal dashboard tracking pipeline health and performance. Real-time status, Telegram alerts for failures, and operational insights to keep systems running.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">Streamlit</span><span class="proj-tech">Telegram Bot</span></div></div>
+    </div>
+    <div class="proj-card rv d1" data-cat="data">
+      <div class="proj-top"><div class="proj-year">2024</div><div class="proj-cat data">Data Eng</div></div>
+      <h3 class="proj-title">FastAPI Telegram Bot — Async & Sync</h3>
+      <p class="proj-desc">Explores worker count impact in Uvicorn/FastAPI on throughput. Demonstrates async vs sync patterns for Telegram bot integrations, useful for pipeline alerting systems.</p>
+      <div class="proj-footer"><div class="proj-techs"><span class="proj-tech">Python</span><span class="proj-tech">FastAPI</span><span class="proj-tech">Uvicorn</span><span class="proj-tech">Telegram</span></div><a href="https://github.com/yusepahmad/fastapi-async-and-sync-send-bot-telegram" target="_blank" class="proj-link">github ↗</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ORACLE ══════════════ -->
+<section id="feature">
+  <div class="feat-grid">
+    <div class="rv rv-l">
+      <div class="feat-badge">Featured · Oracle Academy × MoE Indonesia</div>
+      <h2 class="feat-title">Speaking to <em>8,000 people</em> about the road from SMK to engineer.</h2>
+      <p class="feat-body">In February 2026, I was invited as a speaker at a national webinar organized by Oracle Academy in collaboration with Indonesia's Ministry of Education — joined by teachers and students from vocational schools across the country.</p>
+      <a href="https://blogs.oracle.com/academy/oracle-academy-in-indonesia-collaborates-with-ministry-of-education-moe-to-equip-vocational-graduates-for-global-it-opportunities" target="_blank" class="feat-link">Read the Oracle Blog ↗</a>
+    </div>
+    <div class="feat-card rv rv-r d1">
+      <div class="feat-quote">"My journey took me from SMK alumnus to Team Lead Scrapper Engineer while pursuing my degree."</div>
+      <div class="feat-meta">Yusep Muhamad Zazuli<br>Oracle Academy × Ministry of Education<br>February 2026 · 8,000+ participants</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-name">Yusep M. <em>Zazuli</em></div>
+      <div class="footer-role">// data engineer · open to work · Bandung, id</div>
+    </div>
+    <div class="footer-links">
+      <a href="mailto:yusepmuhamadzazuli05@gmail.com">yusepmuhamadzazuli05@gmail.com</a>
+      <a href="https://linkedin.com/in/yusep-muhamad-zazuli-a2a91b301" target="_blank">linkedin.com/in/yusep-muhamad-zazuli</a>
+      <a href="https://github.com/yusepahmad" target="_blank">github.com/yusepahmad</a>
+      <a href="https://instagram.com/azaa_.py" target="_blank">@azaa_.py</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 Yusep Muhamad Zazuli</div>
+    <div class="footer-sig">built with <span>intention</span>, not templates.</div>
+  </div>
+</footer>
+
+<script>
+/* ═══ CANVAS — MOUSE-REACTIVE PARTICLES ═══ */
+const cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d');
+let W,H,mouse={x:-999,y:-999};
+const resize=()=>{W=cvs.width=window.innerWidth;H=cvs.height=window.innerHeight};
+resize();window.addEventListener('resize',resize);
+document.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+
+class P{
+  constructor(){this.reset(true)}
+  reset(r){
+    this.x=r?Math.random()*W:Math.random()<.5?-10:W+10;
+    this.y=r?Math.random()*H:Math.random()*H;
+    this.ox=this.x;this.oy=this.y;
+    this.vx=(Math.random()-.5)*.3;this.vy=(Math.random()-.5)*.3;
+    this.r=Math.random()*1.3+.4;this.a=Math.random()*.45+.1;this.life=1;
+  }
+  update(){
+    /* Mouse repel */
+    const dx=this.x-mouse.x,dy=this.y-mouse.y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<120){const f=(120-d)/120*.6;this.vx+=dx/d*f;this.vy+=dy/d*f}
+    this.vx*=.98;this.vy*=.98;
+    this.x+=this.vx;this.y+=this.vy;
+    if(this.x<-20||this.x>W+20||this.y<-20||this.y>H+20)this.reset(false);
+  }
+  draw(){
+    ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,185,122,${this.a})`;ctx.fill();
+  }
+}
+const pts=Array.from({length:100},()=>new P());
+
+const LINK=130;
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<pts.length;i++){
+    pts[i].update();pts[i].draw();
+    for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<LINK){
+        ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+        ctx.strokeStyle=`rgba(200,185,122,${.13*(1-d/LINK)})`;ctx.lineWidth=.6;ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ═══ CUSTOM CURSOR ═══ */
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function animR(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animR)})();
+document.querySelectorAll('a,button,.proj-card,.exp-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('cur-hover'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('cur-hover'));
+});
+
+/* ═══ PRELOADER ═══ */
+window.addEventListener('load',()=>{
+  setTimeout(()=>document.getElementById('preloader').classList.add('gone'),1600);
+});
+
+/* ═══ SCROLL ═══ */
+window.addEventListener('scroll',()=>{
+  const prog=document.getElementById('progress');
+  prog.style.width=(window.scrollY/(document.body.scrollHeight-innerHeight)*100)+'%';
+  document.getElementById('nav').classList.toggle('scrolled',window.scrollY>50);
+
+  /* active nav */
+  const secs=['about','stack','experience','projects'];
+  let cur='';
+  secs.forEach(id=>{const el=document.getElementById(id);if(el&&window.scrollY>=el.offsetTop-220)cur=id});
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('active',a.dataset.s===cur));
+
+  /* underline s-title on scroll into view */
+  document.querySelectorAll('.s-title .und').forEach(u=>{
+    const r=u.closest('.s-title').getBoundingClientRect();
+    if(r.top<window.innerHeight*.85)u.classList.add('active');
+  });
+});
+
+/* ═══ REVEAL ═══ */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')});
+},{threshold:.08});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+
+/* ═══ EXP CARDS staggered ═══ */
+const ecObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const cards=e.target.querySelectorAll('.exp-card');
+      cards.forEach((c,i)=>{setTimeout(()=>c.classList.add('ec-in'),i*90)});
+      ecObs.unobserve(e.target);
+    }
+  });
+},{threshold:.05});
+const expList=document.querySelector('.exp-list');
+if(expList)ecObs.observe(expList);
+
+/* ═══ STACK ITEMS staggered ═══ */
+const siObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.stack-item').forEach((it,i)=>{
+        setTimeout(()=>it.classList.add('si-in'),i*40);
+      });
+      siObs.unobserve(e.target);
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.stack-grid').forEach(g=>siObs.observe(g));
+
+/* ═══ COUNTER ═══ */
+const cntObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const el=e.target,tgt=+el.dataset.count,suf=el.dataset.suf||'+';
+    let st=0;const dur=1500,t0=performance.now();
+    const tick=now=>{
+      const p=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-p,3);
+      el.textContent=Math.round(ease*tgt)+(p>=1?suf:'');
+      if(p<1)requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    cntObs.unobserve(el);
+  });
+},{threshold:.6});
+document.querySelectorAll('[data-count]').forEach(el=>cntObs.observe(el));
+
+/* ═══ PROJECT FILTER ═══ */
+function filterProj(cat,btn){
+  document.querySelectorAll('.pf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.proj-card').forEach(c=>{
+    const show=cat==='all'||c.dataset.cat===cat;
+    if(show){c.classList.remove('hidden');c.classList.add('entering');setTimeout(()=>c.classList.remove('entering'),400)}
+    else c.classList.add('hidden');
+  });
+}
+
+/* ═══ MOBILE MENU ═══ */
+function toggleMenu(){
+  const m=document.getElementById('mobMenu'),h=document.getElementById('ham');
+  m.classList.toggle('open');h.classList.toggle('x');
+  document.body.style.overflow=m.classList.contains('open')?'hidden':'';
+}
+function closeMenu(){
+  document.getElementById('mobMenu').classList.remove('open');
+  document.getElementById('ham').classList.remove('x');
+  document.body.style.overflow='';
+}
+
+/* ═══ MAGNETIC BUTTONS ═══ */
+document.querySelectorAll('.btn-fill,.btn-line').forEach(btn=>{
+  btn.addEventListener('mousemove',e=>{
+    const r=btn.getBoundingClientRect();
+    const x=(e.clientX-r.left-r.width/2)*.25;
+    const y=(e.clientY-r.top-r.height/2)*.25;
+    btn.style.transform=`translate(${x}px,${y}px)`;
+  });
+  btn.addEventListener('mouseleave',()=>{btn.style.transform='';});
+});
+
+/* ═══ PROJ CARD 3D TILT ═══ */
+document.querySelectorAll('.proj-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`translateY(-5px) rotateX(${-y*6}deg) rotateY(${x*6}deg)`;
+  });
+  card.addEventListener('mouseleave',()=>{card.style.transform='';});
+});
+
+/* ═══ TEXT SCRAMBLE on hover ═══ */
+const CHARS='アイウエオカキクケコサシスセソ01データ░▒▓│┤╡╢';
+function scramble(el){
+  const orig=el.textContent;let frame=0;
+  const iv=setInterval(()=>{
+    el.textContent=orig.split('').map((c,i)=>i<frame/2?c:c===' '?' ':CHARS[Math.floor(Math.random()*CHARS.length)]).join('');
+    frame++;if(frame>orig.length*2){el.textContent=orig;clearInterval(iv)}
+  },30);
+}
+document.querySelectorAll('.s-title').forEach(t=>{
+  t.addEventListener('mouseenter',()=>{
+    const em=t.querySelector('em');if(em)scramble(em);
+  });
+});
+</script>
+</body>
+</html>
